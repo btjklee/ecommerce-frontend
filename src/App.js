@@ -5,8 +5,7 @@ function App() {
     const [products, setProducts] = useState([]);
 
     useEffect(() => {
-      axios.get("https://ecommerce-site-l9ti.onrender.com/products")
-   // Flask API endpoint
+      axios.get("https://ecommerce-site-l9ti.onrender.com/products")  // Fetch from Render
             .then(response => setProducts(response.data))
             .catch(error => console.error("Error fetching data:", error));
     }, []);
