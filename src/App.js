@@ -1,53 +1,51 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { Container, Card, Button, Navbar, Nav, Row, Col } from "react-bootstrap";
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import Cart from './Cart';
+import Checkout from './Checkout';
 
-function App() {
+const App = () => {
     const [products, setProducts] = useState([]);
+    const [cart, setCart] = useState([]);
 
+    // Fetch products from backend when page loads
     useEffect(() => {
-        axios.get("https://ecommerce-site-l9ti.onrender.com/products")  // API URL
-            .then(response => setProducts(response.data))
-            .catch(error => console.error("Error fetching data:", error));
+        fetch('https://ecommerce-site-l9ti.onrender.com/products')
+            .then(response => response.json())
+            .then(data => setProducts(data))
+            .catch(error => console.error("Error fetching products:", error));
     }, []);
 
-    return (
-        <div>
-            {/* Navbar */}
-            <Navbar bg="dark" variant="dark" expand="lg">
-                <Container>
-                    <Navbar.Brand href="#">My E-Commerce Site</Navbar.Brand>
-                    <Nav className="ms-auto">
-                        <Nav.Link href="#">Home</Nav.Link>
-                        <Nav.Link href="#">Shop</Nav.Link>
-                        <Nav.Link href="#">Cart</Nav.Link>
-                    </Nav>
-                </Container>
-            </Navbar>
+    const addToCart = (product) => {
+        setCart([...cart, product]);
+    };
 
-            {/* Product Display */}
-            <Container className="mt-4">
-                <h1 className="text-center">Welcome to My E-Commerce Site</h1>
-                <h2 className="text-center mb-4">Products</h2>
-                <Row>
-                    {products.map(product => (
-                        <Col md={4} key={product.id} className="mb-4">
-                            <Card className="shadow">
-                                <Card.Body>
-                                    <Card.Title>{product.name}</Card.Title>
-                                    <Card.Text>
-                                        {product.description}
-                                    </Card.Text>
-                                    <h4>${product.price}</h4>
-                                    <Button variant="primary">Buy Now</Button>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                    ))}
-                </Row>
-            </Container>
-        </div>
+    return (
+        <Router>
+            <nav>
+                <Link to="/">Home</Link> | <Link to="/cart">Cart ({cart.length})</Link>
+            </nav>
+
+            <Routes>
+                <Route path="/" element={
+                    <div>
+                        <h1>Welcome to My E-Commerce Site</h1>
+                        <h2>Products</h2>
+                        <ul>
+                            {products.map(product => (
+                                <li key={product.id}>
+                                    {product.name} - ${product.price.toFixed(2)}
+                                    <button onClick={() => addToCart(product)}>Add to Cart</button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                } />
+                <Route path="/cart" element={<Cart cart={cart} />} />
+                <Route path="/checkout" element={<Checkout cart={cart} />} />
+                <Route path="/thank-you" element={<h2>Thank you for your order!</h2>} />
+            </Routes>
+        </Router>
     );
-}
+};
 
 export default App;
