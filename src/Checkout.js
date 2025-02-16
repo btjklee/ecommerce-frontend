@@ -14,7 +14,7 @@ const Checkout = ({ cart }) => {
         };
 
         try {
-            const response = await fetch("http://localhost:5000/checkout", {
+            const response = await fetch("https://ecommerce-site-l9ti.onrender.com/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(orderData),
