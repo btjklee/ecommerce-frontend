@@ -1,64 +1,87 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
-const stripePromise = loadStripe("pk_test_51Qtawu2NvkwdcPoHVu1iQm1SUDuuItazwayHRfpMi2P6rh43w748DgIIDwSEy4jcnEJJ7DerMewGsSkgbx2kP2Rz002q8yelSc");
+// Load Stripe
+const stripePromise = loadStripe("your-publishable-key-here");
 
-const CheckoutForm = ({ totalAmount }) => {
+const Checkout = ({ cart }) => {
+    const [name, setName] = useState("");
+    const [address, setAddress] = useState("");
+    const [clientSecret, setClientSecret] = useState("");
+
+    useEffect(() => {
+        fetch("https://ecommerce-site-l9ti.onrender.com/create-payment-intent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ amount: cart.reduce((sum, item) => sum + item.price, 0) })
+        })
+        .then(res => res.json())
+        .then(data => setClientSecret(data.clientSecret))
+        .catch(err => console.error("Error creating payment intent:", err));
+    }, [cart]);
+
+    return (
+        <div className="container">
+            <h2 className="text-center my-4">Checkout</h2>
+            <form className="w-50 mx-auto">
+                <div className="mb-3">
+                    <label className="form-label">Name</label>
+                    <input type="text" className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <div className="mb-3">
+                    <label className="form-label">Address</label>
+                    <input type="text" className="form-control" value={address} onChange={(e) => setAddress(e.target.value)} required />
+                </div>
+
+                {/* Stripe Payment Form */}
+                {clientSecret && (
+                    <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <StripeCheckoutForm name={name} address={address} cart={cart} />
+                    </Elements>
+                )}
+            </form>
+        </div>
+    );
+};
+
+// Stripe Checkout Form Component
+const StripeCheckoutForm = ({ name, address, cart }) => {
     const stripe = useStripe();
     const elements = useElements();
-    const [error, setError] = useState(null);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
 
-        const { paymentMethod, error } = await stripe.createPaymentMethod({
-            type: "card",
-            card: elements.getElement(CardElement),
+        if (!stripe || !elements) return;
+
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+                card: elements.getElement(CardElement),
+                billing_details: { name, address }
+            }
         });
 
         if (error) {
-            setError(error.message);
-            return;
-        }
-
-        const response = await fetch("https://ecommerce-site-l9ti.onrender.com/create-payment-intent", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ amount: totalAmount }),
-        });
-
-        const { clientSecret } = await response.json();
-        const result = await stripe.confirmCardPayment(clientSecret, {
-            payment_method: paymentMethod.id,
-        });
-
-        if (result.error) {
-            setError(result.error.message);
+            console.error(error);
+            alert("Payment failed!");
         } else {
-            alert("Payment Successful!");
+            alert("Payment successful!");
+            console.log("PaymentIntent:", paymentIntent);
         }
     };
 
     return (
         <form onSubmit={handleSubmit}>
-            <CardElement />
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            <button type="submit" disabled={!stripe}>Pay Now</button>
+            <div className="mb-3">
+                <label className="form-label">Card Details</label>
+                <CardElement className="form-control" />
+            </div>
+            <button type="submit" className="btn btn-primary w-100" disabled={!stripe}>
+                Pay Now
+            </button>
         </form>
     );
 };
 
-const Checkout = ({ cart }) => {
-    const totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
-
-    return (
-        <Elements stripe={stripePromise}>
-            <h2>Checkout</h2>
-            <CheckoutForm totalAmount={totalAmount} />
-        </Elements>
-    );
-};
-
 export default Checkout;
-
