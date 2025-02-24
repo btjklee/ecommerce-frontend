@@ -11,10 +11,12 @@ const Checkout = ({ cart }) => {
     const [clientSecret, setClientSecret] = useState("");
 
     useEffect(() => {
+        if (cart.length === 0) return; // Prevent sending empty requests
+
         fetch("https://ecommerce-site-l9ti.onrender.com/create-payment-intent", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ amount: cart.reduce((sum, item) => sum + item.price, 0) })
+            body: JSON.stringify({ amount: cart.reduce((sum, item) => sum + item.price, 0) * 100 }) // Convert to cents
         })
         .then(res => res.json())
         .then(data => setClientSecret(data.clientSecret))
@@ -37,7 +39,7 @@ const Checkout = ({ cart }) => {
                 {/* Stripe Payment Form */}
                 {clientSecret && (
                     <Elements stripe={stripePromise} options={{ clientSecret }}>
-                        <StripeCheckoutForm name={name} address={address} cart={cart} />
+                        <StripeCheckoutForm name={name} address={address} cart={cart} clientSecret={clientSecret} />
                     </Elements>
                 )}
             </form>
@@ -46,14 +48,17 @@ const Checkout = ({ cart }) => {
 };
 
 // Stripe Checkout Form Component
-const StripeCheckoutForm = ({ name, address, cart }) => {
+const StripeCheckoutForm = ({ name, address, cart, clientSecret }) => {
     const stripe = useStripe();
     const elements = useElements();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (!stripe || !elements) return;
+        if (!stripe || !elements || !clientSecret) {
+            console.error("Stripe or clientSecret not available");
+            return;
+        }
 
         const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
             payment_method: {
