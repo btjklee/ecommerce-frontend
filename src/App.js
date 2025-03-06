@@ -25,7 +25,10 @@ const App = () => {
             <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
                 <div className="container">
                     <Link className="navbar-brand" to="/">E-Shop</Link>
-                    <div className="collapse navbar-collapse">
+                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span className="navbar-toggler-icon"></span>
+                    </button>
+                    <div className="collapse navbar-collapse" id="navbarNav">
                         <ul className="navbar-nav ms-auto">
                             <li className="nav-item">
                                 <Link className="nav-link" to="/">Home</Link>
@@ -41,6 +44,7 @@ const App = () => {
                 </div>
             </nav>
 
+
             {/* Routes */}
             <div className="container mt-4">
                 <Routes>
@@ -51,7 +55,7 @@ const App = () => {
                                 {products.map(product => (
                                     <div className="col-md-4 mb-4" key={product.id}>
                                         <div className="card shadow-sm">
-                                        <img src={product.image} className="card-img-top" alt={product.name} onError={(e) => e.target.src = "https://placehold.co/150x150"} />
+                                            <img src={product.image} className="card-img-top" alt={product.name} onError={(e) => e.target.src = "https://placehold.co/150x150"} />
                                             <div className="card-body text-center">
                                                 <h5 className="card-title">{product.name}</h5>
                                                 <p className="card-text">${product.price.toFixed(2)}</p>
